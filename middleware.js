@@ -12,3 +12,25 @@ module.exports.isLoggedIn = (req, res, next) => {
     }
     next();
 }
+
+// validator middlewire function
+module.exports.validateHotel = (req, res, next) => {
+    const { error } = hotelSchema.validate(req.body);
+    if (error) {
+        const msg = error.details.map(el => el.message).join(',')
+        throw new expressError(msg, 400)
+    } else {
+        next();
+    }
+}
+
+// authorization middleware 
+module.exports.isAuthor = async (req, res, next) => {
+    const { id } = req.params;
+    const hotel = await Hotel.findById(id);
+    if (!hotel.author.equals(req.user._id)) {
+        req.flash('error', 'You do not have permission to do that!');
+        return res.redirect(`/hotels/${id}`);
+    }
+    next();
+}
