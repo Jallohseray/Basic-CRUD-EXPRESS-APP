@@ -6,6 +6,7 @@ const Review = require('../Models/reviews');
 const catchAsync = require('../utils/catchAsync');
 const expressError = require('../utils/expressError');
 const { reviewSchema } = require('../views/schemas');
+const {  isLoggedIn } = require('../middleware');
 
 
 
@@ -22,10 +23,23 @@ const validateReview = (req, res, next) => {
     }
 }
 
+// authorized reviewer middleware
+    const isReviewAuthor = async (req, res, next) => {
+    const { id, reviewId } = req.params;
+    const review = await Review.findById(reviewId);
+    if (review && !review.author.equals(req.user._id)) {
+        req.flash('error', 'You do not have permission to do that!');
+        return res.redirect(`/hotels/${id}`);
+    }
+    next();
+}
+
 // post reviews route
-router.post('/', validateReview, catchAsync(async (req, res) => {
+router.post('/',  isLoggedIn, validateReview, isReviewAuthor, catchAsync(async (req, res) => {
     const hotel = await Hotel.findById(req.params.id);
     const review = new Review(req.body.review);
+    //sets the reviewer name to the current username and save it
+    review.author = req.user._id;
     hotel.reviews.push(review);
     await review.save();
     await hotel.save();
@@ -33,7 +47,7 @@ router.post('/', validateReview, catchAsync(async (req, res) => {
 }))
 
 // delete reviews route
-router.delete('/:reviewId', catchAsync(async (req, res) => {
+router.delete('/:reviewId', isReviewAuthor, catchAsync(async (req, res) => {
     const { id, reviewId } = req.params;
     await Hotel.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
     await Review.findByIdAndDelete(reviewId);
