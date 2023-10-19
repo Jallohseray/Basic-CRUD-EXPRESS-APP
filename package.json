@@ -9,6 +9,7 @@
   "author": "C Ray Jahrulo",
   "license": "ISC",
   "dependencies": {
+    "@material-tailwind/html": "^2.0.0",
     "bcrypt": "^5.1.1",
     "bootstrap": "^5.3.2",
     "connect-flash": "^0.1.1",
